@@ -21,9 +21,37 @@ This JMS Bridge Grafana Demo runs the JMS Bridge in a Docker Compose along with 
 To run this demo, you need to have the following installed on your machine:
 
 * Docker
+* Confluent Cloud Account
 
 ### Installation 
-First, create a file called `values.tfvars` with the following content in the same directory as `docker-compose.yml`:
+1) Log into [Confluent Cloud](https://confluent.cloud) and enter your email and password. If you are not registered before, [click here][https://www.confluent.io/confluent-cloud/tryfree/] to register.
+
+
+2) Once you have logged in, click on the menu icon at the upper right hand corner and click **Cloud API Keys** to create Cloud API Keys for the terraform provider. 
+
+<div align="center" padding=25px>
+    <img src="./jms-bridge-grafana-demo/images/01-preview.jpg" width=15% height=15%>
+</div>
+
+3) Click **+ Add Key** to create a new API Key.
+
+<div align="center" padding=25px>
+    <img src="./jms-bridge-grafana-demo/images/02-addkey.jpg" width=60% height=60%>
+</div>
+
+4) For the purpose of this demo selet **Global Access** and click **Next**
+
+<div align="center" padding=25px>
+    <img src="./jms-bridge-grafana-demo/images/03-createapikey.jpg" width=50% height=50%>
+</div>
+
+5) Type a description and to preserve the keys, click download. 
+
+<div align="center" padding=25px>
+    <img src="./jms-bridge-grafana-demo/images/04-download.jpg" width=50% height=50%>
+</div>
+
+6) Create a file called `values.tfvars` with the following content in the same directory as `docker-compose.yml`:
 ```shell
 confluent_cloud_api_key="<confluent_cloud_api_key>"
 confluent_cloud_api_secret="<confluent_cloud_api_secret>"
@@ -33,7 +61,7 @@ confluent_cloud_environment_name="<confluent_cloud_environment_name>"
 confluent_cloud_cluster_name="<confluent_cloud_cluster_name>"
 ```
 
-Then run the following command to deploy the JMS Bridge Grafana Demo
+7)  run the following command to deploy the JMS Bridge Grafana Demo
 ```shell
 cd jms-bridge-grafana-demo
 ./deploy.sh
