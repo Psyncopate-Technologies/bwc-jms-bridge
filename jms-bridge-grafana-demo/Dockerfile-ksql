@@ -1,0 +1,13 @@
+FROM golang:1.21.5-alpine AS builder
+
+WORKDIR /src
+COPY src/ ./
+RUN go mod download
+RUN go build -o /src/execute_ksql_statements
+
+FROM alpine:3.19
+
+ENV KSQL_STATEMENTS="[\"CREATE STREAM T1_JSON (id VARCHAR, first_name VARCHAR, last_name VARCHAR, gender VARCHAR, age VARCHAR, eyecolor VARCHAR, email VARCHAR, phone_number VARCHAR, street_address VARCHAR, state VARCHAR, zip_code VARCHAR, country VARCHAR, country_code VARCHAR, airport VARCHAR, status VARCHAR) WITH (KAFKA_TOPIC='psy-travel', VALUE_FORMAT='JSON');\", \"CREATE STREAM USER_EVENTS_AVRO WITH (VALUE_FORMAT='AVRO') AS SELECT ROWTIME AS ts, TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss.SSS z') AS rowtime_formatted, * FROM T1_JSON PARTITION by id;\", \"CREATE STREAM BY_STATUSES AS SELECT * FROM  USER_EVENTS_AVRO PARTITION BY  AIRPORT + '-' +  STATUS;\"]"
+
+COPY --from=builder /src/execute_ksql_statements /bin/execute_ksql_statements
+ENTRYPOINT ["/bin/execute_ksql_statements"]

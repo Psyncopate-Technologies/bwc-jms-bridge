@@ -1,94 +1,88 @@
 
-## JMS Bridge Graphana Demo - Docker Compose Installation
+## JMS Bridge Grafana Demo
 
 ### Overview
 The JMS-Bridge is a component that can be used to facilitate quicker migration from legacy JMS based systems to ones built around the Confluent Platform:
 <br >[https://www.confluent.io/confluent-accelerators/](https://www.confluent.io/confluent-accelerators/)
 <br />(See **JMS 2.0 Bridge** section)
 
-This JMS Bridge Graphana Demo runs the JMS Bridge in a Docker Compose along with Confluent Platform and Grapha, and includes a use case for geographical visual of airport traveler events in a Graphana Dashboard.
-![Graphana](./jms-bridge-graphana-demo/images/graphan-dashboard.png)
+This JMS Bridge Grafana Demo runs the JMS Bridge in a Docker Compose along with Confluent Cloud, Grafana with the KSQL plugin , and includes a use case for geographical visual of airport traveler events in a Grafana Dashboard.
+![Grafana](./jms-bridge-grafana-demo/images/grafan-dashboard.png)
+
+### The JMS Bridge Grafana Demo includes the following components:
+
+- **Confluent Cloud**: A fully managed Apache Kafka service.
+- **JMS Bridge**: A component that can be used to facilitate quicker migration from legacy JMS based systems to ones built around the Confluent Platform.
+- **Grafana**: A multi-platform open-source analytics and interactive visualization web application.
+- **KSQL Plugin for Grafana**: A Grafana plugin that allows you to query and visualize data from Confluent Cloud using KSQL.
 
 ### Installation - Prerequisites
-The Confluent JMS Bridge Docker Images are required, these are not publicly available but can be obtained from Confluent CSID Team, typically as ```jms-bridge-docker.tar```. They are referenced as ```placeholder/confluentinc/jms-bridge-docker:local.build``` in Docker Compose. They should be loaded in Docker before starting JMS Bridge Graphana Demo for the first time for example:
+
+To run this demo, you need to have the following installed on your machine:
+
+* Docker
+* Confluent Cloud Account
+
+### Installation 
+1) Log into [Confluent Cloud](https://confluent.cloud) and enter your email and password. If you are not registered before, [click here][https://www.confluent.io/confluent-cloud/tryfree/] to register.
+
+
+2) Once you have logged in, click on the menu icon at the upper right hand corner and click **Cloud API Keys** to create Cloud API Keys for the terraform provider. 
+
+<div align="center" padding=25px>
+    <img src="./jms-bridge-grafana-demo/images/01-preview.jpg" width=15% height=15%>
+</div>
+
+3) Click **+ Add Key** to create a new API Key.
+
+<div align="center" padding=25px>
+    <img src="./jms-bridge-grafana-demo/images/02-addkey.jpg" width=60% height=60%>
+</div>
+
+4) For the purpose of this demo selet **Global Access** and click **Next**
+
+<div align="center" padding=25px>
+    <img src="./jms-bridge-grafana-demo/images/03-createapikey.jpg" width=50% height=50%>
+</div>
+
+5) Type a description and to preserve the keys, click download. 
+
+<div align="center" padding=25px>
+    <img src="./jms-bridge-grafana-demo/images/04-download.jpg" width=50% height=50%>
+</div>
+
+6) Create a file called `values.tfvars` with the following content in the same directory as `docker-compose.yml`:
 ```shell
-docker load < jms-bridge-docker.tar
+confluent_cloud_api_key="<confluent_cloud_api_key>"
+confluent_cloud_api_secret="<confluent_cloud_api_secret>"
+confluent_cloud_provider="<confluent_cloud_provider[AWS|GCP|AZURE]>"
+confluent_cloud_region="<confluent_cloud_region>"
+confluent_cloud_environment_name="<confluent_cloud_environment_name>"
+confluent_cloud_cluster_name="<confluent_cloud_cluster_name>"
 ```
 
-### Docker Compose Deployment
-Deploy the attached ```docker-compose.yaml```:
+7)  run the following command to deploy the JMS Bridge Grafana Demo
 ```shell
-# In the same directory as docker-compose.yaml
-docker compose up -d
+cd jms-bridge-grafana-demo
+./deploy.sh
 ```
 
-### Confirm Confluent Platform is Running
-Navigate to Confluent Control Center to verify Confluent Platform:
-<br />[http://localhost:9021](http://localhost:9021)
-<br />(Note - Replace ```localhost``` with the IP or DNS name where Docker is running)
-<br />You should see one Healthy Cluster running in Confluent Platform, named ```controlcenter.cluster```
+### Usage
 
-### Create Travel Topic
-In Confluent Control Center, navigate to the ```controlcenter.cluster``` Cluster and create a new topic named as ```psy-travel```, with all the default values.
-
-### Restart
-On the command line, restart JMS Bridge to sync up with the newly created topic:
+To produce messages, run the following command:
 ```shell
-docker restart jms-bridge-psy
-```
-### Create the ksqlDB Streams for Graphana Visualization
-In Confluent Control Center, navigate to ksqlDB in the ```controlcenter.cluster``` Cluster and create the following Streams:
-
-**Create stream to base ROWTIME calculations for downstream processing**
-```sql
-CREATE STREAM T1_JSON (id VARCHAR, first_name VARCHAR, last_name VARCHAR, gender VARCHAR, age VARCHAR, eyecolor VARCHAR, email VARCHAR, phone_number VARCHAR, street_address VARCHAR, state VARCHAR, zip_code VARCHAR, country VARCHAR, country_code VARCHAR, airport VARCHAR, status VARCHAR)
-WITH (KAFKA_TOPIC='psy-travel', VALUE_FORMAT='JSON');
+cd jms-bridge-grafana-demo
+./produce.sh
 ```
 
-**Create persistent query with formatted ROWTIME for Graphana Dashboard**
-```sql
-CREATE STREAM USER_EVENTS_AVRO WITH (VALUE_FORMAT='AVRO') AS
-SELECT ROWTIME AS ts, TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss.SSS z') AS rowtime_formatted, *
-FROM T1_JSON PARTITION by id;
-```
-### Create a Confluent Connect PostgreSQL Sink Connector to Power the Graphana Dashboard
-On the command line, Install Kafka Connect JDBC:
+Now you can access the Grafana Dashboard by visiting [http://localhost:3000](http://localhost:3000) and select the `PSY Traveler Events Dashboard` in the Dashboards section.
+
+![Dashboard](./jms-bridge-grafana-demo/images/grafana.png)
+
+### Cleanup
+
+To stop and remove the containers, run the following command:
 ```shell
-# Connect to Confluent Connect container
-docker exec -it connect-psy /bin/bash
-# Install Kafka Connect JDBC and exit
-confluent-hub install confluentinc/kafka-connect-jdbc:10.7.5
-exit
-# Restart Confluent Connect to load the new connector
-docker restart connect-psy
+cd jms-bridge-grafana-demo
+./destroy.sh
 ```
-In Confluent Control Center, deploy the Sink Connector for PostgreSQL:
-1. Navigate to Connect in the ```controlcenter.cluster``` Cluster:
-1. Select the ```connect-default``` Cluster
-1. Click [+Add connector] button
-1. Click [Upload connector config file] button
-1. Upload the attached ```connect-jdbc-sink.json``` file
-1. Click [Next] button and Deploy the connector
-
-### Create the Graphana Dashboard
-Navigate to Graphana:
-<br />[http://localhost:3000](http://localhost:3000)
-<br />(Note - Replace ```localhost``` with the IP or DNS name where Docker is running)
-<br />Upload attached ```PSY Traveler Events Dashboard-1712964241310.json``` Dashboard.
-
-### Generate Sample Events
-Use the JMS Client of your choice to generate sample events from the attached ```psy_travelers.txt```:
-```yaml
-- jms.host: tcp://localhost:61616
-- jms.topicName kafka.psy-travel
-```
-(Note - Replace ```localhost``` with the IP or DNS name where Docker is running)
-
-### Refresh the Graphana Dashboard
-Navigate to Graphana:
-<br />[http://localhost:3000](http://localhost:3000)
-<br />(Note - Replace ```localhost``` with the IP or DNS name where Docker is running)
-<br />Open the ```PSY Traveler Events Dashboard``` Dashboard. You should see events visualized on the dashboard per the messages produced from ```psy_travelers.txt```.
-
-### JMS Bridge Architecture
-![Graphana](./jms-bridge-graphana-demo/images/jms-bridge-arch.png)

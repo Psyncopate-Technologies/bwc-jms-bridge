@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  python:
+    image: python:3.8.19-alpine3.20
+    volumes:
+      - ./:/demo
+    working_dir: /demo
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS
+      - SCHEMA_REGISTRY_URL
+      - SCHEMA_REGISTRY_API_ID
+      - SCHEMA_REGISTRY_API_SECRET
+      - KAFKA_API_KEY
+      - KAFKA_API_SECRET
+      - KSQL_API_KEY
+      - KSQL_API_SECRET
+      - KSQL_ENDPOINT

@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  producer:
+    image: eclipse-temurin:21-jre-jammy
+    volumes:
+      - ./:/demo
+    working_dir: /demo
+    environment:
+      - JMS_BRIDGE=jms-bridge

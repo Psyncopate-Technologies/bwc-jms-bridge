@@ -1,0 +1,54 @@
+---
+version: '2'
+services:
+  jms-bridge:
+    hostname: JMS_BRIDGE
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+        - 8080:8080
+        - 61616:61616
+    volumes:
+      - ./:/demo
+    environment:
+      - JMSBRIDGE_ID=JMS_BRIDGE
+      - JMSBRIDGE_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+      - JMSBRIDGE_SCHEMA_REGISTRY_URL=${SCHEMA_REGISTRY_URL}
+
+      - JMSBRIDGE_KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+      - JMSBRIDGE_KAFKA_SECURITY_PROTOCOL=SASL_SSL
+      - JMSBRIDGE_KAFKA_SASL_MECHANISM=PLAIN
+      - JMSBRIDGE_KAFKA_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule required username='${KAFKA_API_KEY}' password='${KAFKA_API_SECRET}';
+      - JMSBRIDGE_JOURNALS_TOPIC_REPLICATION=3
+
+      - JMSBRIDGE_KAFKA_SCHEMA_REGISTRY_API_ID=${SCHEMA_REGISTRY_API_ID}
+      - JMSBRIDGE_KAFKA_SCHEMA_REGISTRY_API_SECRET=${SCHEMA_REGISTRY_API_SECRET}
+      - JMSBRIDGE_KAFKA_BASIC_AUTH_CREDENTIALS=USER_INFO
+      
+      - JMSBRIDGE_ROUTING_TOPICS_0_MATCH=^psy-travel.*
+      - JMSBRIDGE_ROUTING_TOPICS_0_MESSAGE_TYPE=TEXT
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    ports:
+      - 3000:3000
+    volumes:
+      - ./provisioning/grafana.ini:/etc/grafana/grafana.ini
+      - ./provisioning:/etc/grafana/provisioning
+      - ./dist:/var/lib/grafana/plugins/confluent-ksqlDB
+    environment:
+      - KSQL_API_KEY=$KSQL_API_KEY
+      - KSQL_API_SECRET=$KSQL_API_SECRET
+      - KSQL_ENDPOINT=$KSQL_ENDPOINT
+
+#  producer:
+#    image: eclipse-temurin:21-jre-jammy
+#    depends_on:
+#      - jms-bridge
+#      - grafana
+#    volumes:
+#      - ./:/demo
+#    environment:
+#      - JMS_BRIDGE=jms-bridge
+#    command: bash -c "java -jar /demo/jms-mutator-1.0-SNAPSHOT.jar /demo/psy_travelers.txt 2000"

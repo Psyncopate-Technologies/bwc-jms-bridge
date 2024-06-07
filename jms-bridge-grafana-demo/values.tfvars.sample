@@ -1,0 +1,6 @@
+confluent_cloud_api_key="<confluent_cloud_api_key>"
+confluent_cloud_api_secret="<confluent_cloud_api_secret>"
+confluent_cloud_provider="<confluent_cloud_provider[AWS|GCP|AZURE]>"
+confluent_cloud_region="<confluent_cloud_region>"
+confluent_cloud_environment_name="<confluent_cloud_environment_name>"
+confluent_cloud_cluster_name="<confluent_cloud_cluster_name>"
